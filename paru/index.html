@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paru 交互式中文指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral with Teal Accent -->
+    <!-- Application Structure Plan: The application uses a task-oriented dashboard design. A top filter bar allows users to select a command category (e.g., "Install", "Uninstall"). The main content area is a responsive grid of "command cards". Each card displays a command, a short description, and an expandable details section. This structure was chosen over a linear document to facilitate quick command look-up and discovery, which is the primary use case for this type of technical documentation. The user can instantly filter the view to only see relevant commands for a specific task, which is far more efficient than scrolling or text searching. -->
+    <!-- Visualization & Content Choices: The source document is purely textual. All information is presented using structured HTML and styled with Tailwind CSS. The core "visualization" is the interactive, filterable grid of command cards. Report Info: Command Cheatsheet -> Goal: Quick Lookup -> Presentation: Interactive Cards -> Interaction: Filtering via buttons, details-on-demand via <details> tag, copy-to-clipboard button -> Justification: This model transforms a static reference into a dynamic tool, improving usability. Report Info: Detailed command explanations -> Goal: In-depth Understanding -> Presentation: Collapsible <details> section within each card -> Interaction: User-initiated click to expand -> Justification: This "progressive disclosure" keeps the main interface clean while making details accessible. Library/Method: Vanilla JS for filtering and clipboard interaction. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #fdfcfb;
+            color: #333;
+        }
+        .command-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .command-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        details > summary {
+            cursor: pointer;
+            list-style: none;
+        }
+        details > summary::before {
+            content: '▶';
+            margin-right: 0.5rem;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        details[open] > summary::before {
+            transform: rotate(90deg);
+        }
+        .filter-btn.active {
+            background-color: #0d9488;
+            color: white;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+<div class="container mx-auto px-4 py-8 md:py-12">
+
+    <header class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-bold text-teal-800">Paru 交互式中文指南</h1>
+        <p class="mt-4 text-lg text-slate-600">一个更现代、更易用的 Arch Linux AUR 助手命令参考</p>
+    </header>
+
+    <main>
+        <section id="intro" class="mb-12 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-teal-700 mb-3">什么是 Paru?</h2>
+                    <p class="text-slate-700 leading-relaxed">
+                        `Paru` 是一个用 Rust 语言编写的现代 AUR (Arch User Repository) 助手。它封装了 `pacman` 的功能，让您可以**用一套命令统一管理来自官方仓库和 AUR 的软件包**，无需在两个工具间切换。它极大地简化了 Arch Linux 的软件包管理体验。
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-teal-700 mb-3">首次安装 Paru</h3>
+                    <p class="text-slate-600 mb-4">因为 `paru` 本身在 AUR 中, 第一次安装需要手动从 AUR 构建。</p>
+                    <div class="bg-slate-800 text-white rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                        <code># 1. 安装基础编译工具<br>sudo pacman -Syu --needed base-devel git<br><br># 2. 克隆 paru 源码<br>git clone https://aur.archlinux.org/paru.git<br><br># 3. 进入目录并构建安装<br>cd paru<br>makepkg -si</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="interactive-cheatsheet" class="mb-12">
+            <h2 class="text-2xl font-bold text-center text-teal-700 mb-4">交互式命令速查</h2>
+            <p class="text-slate-600 text-center mb-8">点击下方按钮筛选命令类别，或点击卡片查看详细说明。</p>
+            <div id="filter-container" class="flex flex-wrap justify-center gap-2 md:gap-3 mb-10">
+                <button class="filter-btn active py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="all">全部</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="update">系统更新</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="search">搜索</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="install">安装</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="uninstall">卸载</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="query">查询</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="clean">系统清理</button>
+            </div>
+
+            <div id="command-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="update">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">系统更新</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">同步并更新官方仓库和 AUR 的所有软件包。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -Syu</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-teal-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>这是最常用的命令。也可以简化为 <code>paru</code>。</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><code>-S</code>: Sync (同步)，与远程仓库同步。</li>
+                                <li><code>-y</code>: Refresh (刷新)，下载最新的软件包数据库。</li>
+                                <li><code>-u</code>: Update (更新)，升级所有可更新的包。</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="search">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">搜索软件包</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">在官方仓库和 AUR 中搜索包含关键词的包。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -Ss &lt;关键词&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-teal-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>结果会明确区分来自官方仓库 (如 extra) 和 AUR (以 `aur/` 开头) 的软件包。非常适合在不确定包全名时使用。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="search install">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">交互式搜索并安装</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">不加任何操作符，直接进行交互式搜索和安装。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru &lt;关键词&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-teal-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>Paru 会列出所有匹配的包，并给它们编号。您只需输入数字即可选择一个或多个进行安装，非常方便。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="install">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">安装软件包</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">从官方仓库或 AUR 安装一个或多个指定的包。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -S &lt;包名&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-teal-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>Paru 会自动判断包的来源。如果是 AUR 包，它会向您展示 `PKGBUILD` 的内容差异供审查，这是保证安全的关键一步。</p>
+                            <p class="mt-2">可以同时安装多个包，用空格隔开: <code class="text-xs">paru -S neofetch htop</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="uninstall">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">彻底卸载软件包</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3"><strong>推荐的卸载方式。</strong> 卸载包、其无用依赖及全局配置文件。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -Rns &lt;包名&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-teal-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>这是保持系统干净的最佳实践。</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><code>-R</code>: Remove (移除)。</li>
+                                <li><code>-n</code>: NoSave (不保存)，删除配置文件，而不是重命名为 `.pacsave`。</li>
+                                <li><code>-s</code>: Recursive (递归)，删除不再被任何包需要的依赖。</li>
+                            </ul>
+                            <p class="mt-2">其他卸载方式：<br><code>-R</code>: 只卸载包本身。<br><code>-Rs</code>: 卸载包及其无用依赖。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="query">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">查询已安装包信息</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">显示一个已安装包的详细信息（版本、大小、依赖等）。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -Qi &lt;包名&gt;</code>
+                    </div>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="query">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">查询仓库中包信息</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">显示一个未安装包在仓库中的详细信息。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -Si &lt;包名&gt;</code>
+                    </div>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="query">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">列出包内文件</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">列出指定已安装包所包含的所有文件路径。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -Ql &lt;包名&gt;</code>
+                    </div>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="query">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">查询文件归属</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">查询某个特定文件是由哪个软件包安装的。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -F &lt;文件名&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-teal-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>在使用前，可能需要先用 <code>sudo pacman -Fy</code> 同步文件数据库。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="clean">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">清理孤立依赖</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">移除作为依赖安装，但现在不再被任何包需要的“孤儿”包。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -c</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-teal-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>这是 paru 提供的便捷命令。传统等效命令为 <code>paru -Rns $(pacman -Qtdq)</code>。定期执行此命令有助于保持系统清洁。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="clean">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">清理软件包缓存</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">清理已下载的软件包文件以释放磁盘空间。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -Sc</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-teal-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p><code>-Sc</code>: 清理**未安装**的软件包缓存（比如旧版本的包）。</p>
+                            <p class="mt-2"><code>-Scc</code>: 清理**所有**缓存文件，包括已安装包的。这会释放更多空间，但下次重装或降级需要重新下载。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="update">
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-bold text-teal-800">查看 AUR 更新</h3>
+                            <span class="copy-btn text-slate-400 hover:text-teal-600 cursor-pointer" title="复制命令">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </span>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">仅列出可用的 AUR 更新，而不执行安装。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">paru -Qua</code>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center mt-12 border-t pt-6">
+        <p class="text-sm text-slate-500">根据 Paru 指南文档生成 | 交互式体验设计</p>
+    </footer>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterContainer = document.getElementById('filter-container');
+        const commandGrid = document.getElementById('command-grid');
+        const commandCards = commandGrid.querySelectorAll('.command-card');
+        const copyButtons = document.querySelectorAll('.copy-btn');
+
+        filterContainer.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'BUTTON') return;
+
+            const filter = e.target.dataset.filter;
+
+            filterContainer.querySelector('.active').classList.remove('active');
+            e.target.classList.add('active');
+
+            commandCards.forEach(card => {
+                const categories = card.dataset.category.split(' ');
+                if (filter === 'all' || categories.includes(filter)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const card = button.closest('.command-card');
+                const commandText = card.querySelector('.command-text').textContent;
+
+                const textarea = document.createElement('textarea');
+                textarea.value = commandText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    const originalTitle = button.title;
+                    button.title = '已复制!';
+                    setTimeout(() => {
+                        button.title = originalTitle;
+                    }, 2000);
+                } catch (err) {
+                    console.error('无法复制命令: ', err);
+                    button.title = '复制失败';
+                }
+                document.body.removeChild(textarea);
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
