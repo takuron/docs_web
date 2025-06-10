@@ -110,6 +110,38 @@
                     </div>
                 </div>
 
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="setup">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">配置 Git 代理</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">为 Git 设置 HTTP/HTTPS 代理，用于访问网络。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git config --global http.proxy 'http://127.0.0.1:7890'</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>当网络环境需要代理才能访问 GitHub 等服务时，此配置非常有用。代理地址和端口需根据你的实际情况修改。</p>
+                            <p class="mt-2">设置 HTTPS 代理: <br><code class="text-xs">git config --global https.proxy 'http://127.0.0.1:7890'</code></p>
+                            <p class="mt-2">如果使用 SOCKS5 代理: <br><code class="text-xs">git config --global https.proxy 'socks5://127.0.0.1:1080'</code></p>
+                            <p class="mt-2">取消代理设置: <br><code class="text-xs">git config --global --unset http.proxy</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="setup">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">配置默认编辑器</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">设置执行 git commit 等命令时使用的默认编辑器。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git config --global core.editor "code --wait"</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>此示例将 Visual Studio Code 设置为默认编辑器。`--wait` 参数是必需的，它会等待文件在 VS Code 中关闭后才继续执行 Git 命令。</p>
+                            <p class="mt-2">其他编辑器示例: <br><code class="text-xs">git config --global core.editor "vim"</code><br><code class="text-xs">git config --global core.editor "nano"</code></p>
+                        </div>
+                    </details>
+                </div>
+
                 <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="workflow">
                     <div class="flex-grow">
                         <h3 class="text-lg font-bold text-orange-800">查看状态</h3>
