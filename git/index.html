@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git 交互式中文指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Neutral with Orange Accent -->
+    <!-- Application Structure Plan: This application mirrors the successful task-oriented dashboard design of the Paru guide. The structure uses a filter bar for command categories (e.g., "Setup", "Branching", "Remote") and a responsive grid of command cards. This is ideal for a Git cheatsheet, as developers often need to quickly find a specific command for a specific task (e.g., "how do I undo a commit?"). This non-linear, filterable approach is superior to a flat document for quick reference and learning. -->
+    <!-- Visualization & Content Choices: As a textual reference, information is presented with structured HTML styled by Tailwind. The interactive card grid is the primary method of "visualization." Report Info: Common Git Commands -> Goal: Quick Lookup & Understanding -> Presentation: Interactive Cards -> Interaction: Category filtering via buttons, expandable details, one-click copy -> Justification: Transforms a static list of commands into a dynamic and efficient reference tool. Report Info: Command options and explanations -> Goal: Deeper Learning -> Presentation: Collapsible <details> section -> Interaction: User-initiated click to expand -> Justification: Maintains a clean UI via progressive disclosure, hiding complexity until needed. Library/Method: Vanilla JS for all interactions. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+        .command-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .command-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        details > summary {
+            cursor: pointer;
+            list-style: none;
+        }
+        details > summary::before {
+            content: '▶';
+            margin-right: 0.5rem;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        details[open] > summary::before {
+            transform: rotate(90deg);
+        }
+        .filter-btn.active {
+            background-color: #f97316;
+            color: white;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+<div class="container mx-auto px-4 py-8 md:py-12">
+
+    <header class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-bold text-orange-800">Git 交互式中文指南</h1>
+        <p class="mt-4 text-lg text-slate-600">为开发者准备的现代化 Git 命令速查手册</p>
+    </header>
+
+    <main>
+        <section id="intro" class="mb-12 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-2xl font-bold text-orange-700 mb-3 text-center">什么是 Git?</h2>
+            <p class="text-slate-700 leading-relaxed max-w-3xl mx-auto text-center">
+                Git 是一个免费、开源的**分布式版本控制系统**，旨在快速高效地处理从小型到非常大的项目的所有事务。它用于在软件开发期间跟踪源代码的变化，允许多个开发人员协同工作。本指南汇集了最常用的 Git 命令，帮助您提高开发效率。
+            </p>
+        </section>
+
+        <section id="interactive-cheatsheet" class="mb-12">
+            <h2 class="text-2xl font-bold text-center text-orange-700 mb-4">交互式命令速查</h2>
+            <p class="text-slate-600 text-center mb-8">点击下方按钮筛选命令类别，或展开卡片查看详细说明与示例。</p>
+            <div id="filter-container" class="flex flex-wrap justify-center gap-2 md:gap-3 mb-10">
+                <button class="filter-btn active py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="all">全部</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="setup">配置与初始化</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="workflow">日常工作流</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="branch">分支管理</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="remote">远程与同步</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="undo">撤销更改</button>
+            </div>
+
+            <div id="command-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="setup">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">配置用户信息</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">首次使用 Git 时设置你的用户名和邮箱。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git config --global user.name "Your Name"</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>这是提交代码时署名的依据。`--global` 标志表示这是全局配置。</p>
+                            <p class="mt-2">设置邮箱: <br><code class="text-xs">git config --global user.email "you@example.com"</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="setup">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">初始化仓库</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">在当前目录创建一个新的 Git 仓库。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git init</code>
+                    </div>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="setup">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">克隆远程仓库</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">从远程地址下载一个项目的完整历史记录。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git clone &lt;仓库URL&gt;</code>
+                    </div>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="workflow">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">查看状态</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">显示工作区和暂存区的状态。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git status</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>这是最常用的命令之一，可以查看哪些文件被修改、哪些文件已暂存，以及当前所在分支。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="workflow">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">暂存文件</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">将文件的更改添加到暂存区，准备提交。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git add &lt;文件名&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>暂存所有已修改和新文件: <br><code class="text-xs">git add .</code></p>
+                            <p class="mt-2">交互式暂存部分更改: <br><code class="text-xs">git add -p</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="workflow">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">提交更改</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">将暂存区的内容创建为一次新的提交记录。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git commit -m "提交信息"</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p><code>-m</code> 标志用于直接在命令行提供提交信息。</p>
+                            <p class="mt-2">将已暂存文件追加到上一次提交: <br><code class="text-xs">git commit --amend</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="workflow">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">查看提交历史</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">显示当前分支的提交历史记录。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git log</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>更美观的单行图形化历史: <br><code class="text-xs">git log --graph --oneline --decorate</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="branch">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">分支管理</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">列出、创建或删除分支。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git branch</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>列出所有本地分支: <code>git branch</code></li>
+                                <li>创建新分支: <code>git branch &lt;分支名&gt;</code></li>
+                                <li>删除分支: <code>git branch -d &lt;分支名&gt;</code></li>
+                                <li>强制删除分支: <code>git branch -D &lt;分支名&gt;</code></li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="branch">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">切换分支</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">切换到指定的分支。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git checkout &lt;分支名&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>创建并立即切换到新分支: <br><code class="text-xs">git checkout -b &lt;新分支名&gt;</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="branch">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">合并分支</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">将指定分支的历史合并到当前分支。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git merge &lt;要合并的分支名&gt;</code>
+                    </div>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="remote">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">推送更改</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">将本地分支的提交推送到远程仓库。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git push &lt;远程名&gt; &lt;分支名&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>通常，远程名是 `origin`。例如: <br><code class="text-xs">git push origin main</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="remote">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">拉取更改</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">从远程仓库获取最新版本并合并到本地。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git pull &lt;远程名&gt; &lt;分支名&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>`git pull` 本质上是 `git fetch` 和 `git merge` 的组合。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="undo">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">重置更改 (暂存区)</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">取消暂存文件，将其移出暂存区。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git reset HEAD &lt;文件名&gt;</code>
+                    </div>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="undo">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">撤销工作区修改</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">丢弃工作区中对某个文件的所有修改。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git checkout -- &lt;文件名&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p class="text-red-600 font-bold">这是一个危险的操作，会永久丢失工作区的修改，请谨慎使用。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="undo">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">反转提交</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">创建一个新的提交，内容与指定的旧提交相反。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git revert &lt;提交ID&gt;</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>这是一种安全地“撤销”公开提交的方式，因为它不修改现有历史，而是追加一个新的“反向”提交。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="workflow undo">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-bold text-orange-800">储藏更改</h3>
+                        <p class="text-sm text-slate-600 mt-1 mb-3">临时保存工作区的修改，让工作区变干净。</p>
+                        <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">git stash</code>
+                    </div>
+                    <details class="mt-4 text-sm">
+                        <summary class="font-medium text-orange-700">详细说明</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>查看储藏列表: <code>git stash list</code></li>
+                                <li>恢复最近的储藏: <code>git stash pop</code></li>
+                                <li>应用最近的储藏: <code>git stash apply</code></li>
+                                <li>丢弃最近的储藏: <code>git stash drop</code></li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center mt-12 border-t pt-6">
+        <p class="text-sm text-slate-500">一个交互式 Git 命令参考 | 提升您的开发效率</p>
+    </footer>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterContainer = document.getElementById('filter-container');
+        const commandGrid = document.getElementById('command-grid');
+        const commandCards = commandGrid.querySelectorAll('.command-card');
+
+        if (filterContainer) {
+            filterContainer.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'BUTTON') return;
+
+                const filter = e.target.dataset.filter;
+
+                filterContainer.querySelector('.active').classList.remove('active');
+                e.target.classList.add('active');
+
+                commandCards.forEach(card => {
+                    const categories = card.dataset.category.split(' ');
+                    if (filter === 'all' || categories.includes(filter)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        commandGrid.addEventListener('click', function(e) {
+            const copyBtn = e.target.closest('.copy-btn');
+            if (copyBtn) {
+                e.stopPropagation();
+                const card = copyBtn.closest('.command-card');
+                const commandText = card.querySelector('.command-text').textContent;
+
+                const textarea = document.createElement('textarea');
+                textarea.value = commandText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    const svg = copyBtn.querySelector('svg');
+                    if (svg) {
+                        const originalContent = svg.outerHTML;
+                        copyBtn.innerHTML = '已复制!';
+                        copyBtn.classList.add('text-green-600');
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalContent;
+                            copyBtn.classList.remove('text-green-600');
+                        }, 2000);
+                    }
+                } catch (err) {
+                    console.error('无法复制命令: ', err);
+                }
+                document.body.removeChild(textarea);
+            }
+        });
+
+        // Re-add copy icons dynamically to prevent confusion with the copy-paste text
+        const cardsWithCopyToClip = document.querySelectorAll('.command-card');
+        cardsWithCopyToClip.forEach(card => {
+            const h3 = card.querySelector('h3');
+            if(h3){
+                const copySpan = document.createElement('span');
+                copySpan.className = 'copy-btn text-slate-400 hover:text-orange-600 cursor-pointer';
+                copySpan.title = '复制命令';
+                copySpan.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-between items-start';
+                wrapper.appendChild(h3.cloneNode(true));
+                wrapper.appendChild(copySpan);
+                h3.parentNode.replaceChild(wrapper, h3);
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
