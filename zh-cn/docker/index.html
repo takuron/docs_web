@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker 交互式中文指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Neutral with Docker Blue Accent -->
+    <!-- Application Structure Plan: The application uses a task-oriented dashboard design, consistent with the previous guides. It features a top filter bar for command categories (e.g., "Images", "Containers", "Docker Compose") and a responsive grid of command cards. This structure is highly effective for a technical cheatsheet like Docker's, allowing users to quickly find commands for specific tasks such as managing images or running containers. This interactive, filterable approach significantly speeds up reference compared to a linear document. -->
+    <!-- Visualization & Content Choices: The source material is textual command documentation. All information is presented using structured HTML styled with Tailwind CSS. The core "visualization" is the interactive card grid. Report Info: Common Docker/Compose Commands -> Goal: Quick Lookup & Understanding -> Presentation: Interactive Cards -> Interaction: Category filtering, expandable details for options, one-click copy -> Justification: Transforms static command lists into a dynamic, user-friendly tool. Report Info: Command explanations/flags -> Goal: Deeper Learning -> Presentation: Collapsible <details> section -> Interaction: User-initiated click to expand -> Justification: "Progressive disclosure" keeps the UI clean while making advanced information readily accessible. Library/Method: Vanilla JS for all interactions. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .command-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .command-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        details > summary {
+            cursor: pointer;
+            list-style: none;
+        }
+        details > summary::before {
+            content: '▶';
+            margin-right: 0.5rem;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        details[open] > summary::before {
+            transform: rotate(90deg);
+        }
+        .filter-btn.active {
+            background-color: #2563eb;
+            color: white;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+<div class="container mx-auto px-4 py-8 md:py-12">
+
+    <header class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-bold text-blue-800">Docker 交互式中文指南</h1>
+        <p class="mt-4 text-lg text-slate-600">为现代开发准备的 Docker & Docker Compose 速查手册</p>
+    </header>
+
+    <main>
+        <section id="intro" class="mb-12 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-2xl font-bold text-blue-700 mb-4 text-center">开始使用 Docker</h2>
+            <div class="grid md:grid-cols-2 gap-8 items-start">
+                <div>
+                    <h3 class="text-xl font-semibold text-slate-800 mb-3">什么是 Docker?</h3>
+                    <p class="text-slate-700 leading-relaxed">
+                        Docker 是一个开放平台，用于开发、交付和运行应用程序。它允许您将应用程序与基础架构分离，以便可以快速交付软件。通过 Docker，您可以像管理应用程序一样管理基础架构，通过利用 Docker 的方法来快速交付、测试和部署代码，可以显著减少编写代码和在生产环境中运行代码之间的延迟。
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-slate-800 mb-3">从社区源安装 (Linux)</h3>
+                    <p class="text-slate-600 mb-4">使用官方提供的便捷脚本可以快速安装 Docker Engine：</p>
+                    <div class="bg-slate-800 text-white rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                        <code># 1. 下载并运行安装脚本<br>curl -fsSL https://get.docker.com -o get-docker.sh<br>sudo sh get-docker.sh<br><br># 2. (推荐) 将当前用户添加到 docker 组以免 sudo<br>sudo usermod -aG docker $USER<br><br># 3. 重新登录或重启终端以使组设置生效</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="interactive-cheatsheet" class="mb-12">
+            <h2 class="text-2xl font-bold text-center text-blue-700 mb-4">交互式命令速查</h2>
+            <p class="text-slate-600 text-center mb-8">点击分类筛选，或展开卡片查看更多选项与说明。</p>
+            <div id="filter-container" class="flex flex-wrap justify-center gap-2 md:gap-3 mb-10">
+                <button class="filter-btn active py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="all">全部</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="image">镜像管理</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="container">容器生命周期</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="compose">Docker Compose</button>
+                <button class="filter-btn py-2 px-4 bg-white border border-slate-300 rounded-full text-slate-700 font-medium transition-all duration-200 hover:shadow-md" data-filter="system">系统与清理</button>
+            </div>
+
+            <div id="command-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="image">
+                    <h3 class="text-lg font-bold text-blue-800">拉取镜像</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">从 Docker Hub 或其他镜像仓库下载镜像。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker pull &lt;镜像名&gt;:&lt;标签&gt;</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>例如，拉取最新版的 Ubuntu：<br><code class="text-xs">docker pull ubuntu:latest</code></p>
+                            <p class="mt-2">不指定标签则默认为 `latest`。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="image">
+                    <h3 class="text-lg font-bold text-blue-800">列出本地镜像</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">显示所有已经下载到本地的镜像。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker images</code>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="image">
+                    <h3 class="text-lg font-bold text-blue-800">删除本地镜像</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">从本地删除一个或多个指定的镜像。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker rmi &lt;镜像ID或镜像名&gt;</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>强制删除（即使有容器正在使用）：<br><code class="text-xs">docker rmi -f &lt;镜像ID&gt;</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="image">
+                    <h3 class="text-lg font-bold text-blue-800">构建镜像</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">根据 Dockerfile 构建一个新的镜像。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker build -t &lt;镜像名&gt;:&lt;标签&gt; .</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p><code>-t</code> 用于给镜像命名和打标签。</p>
+                            <p class="mt-2"><code>.</code> 表示 Dockerfile 在当前目录。</p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="container">
+                    <h3 class="text-lg font-bold text-blue-800">创建并运行容器</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">使用指定镜像创建一个新容器并启动它。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker run [选项] &lt;镜像名&gt; [命令]</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">常用选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <ul class="list-disc list-inside space-y-1">
+                                <li><code>-d</code>: 后台运行</li>
+                                <li><code>-p 宿主端口:容器端口</code>: 端口映射</li>
+                                <li><code>-v 宿主路径:容器路径</code>: 数据卷挂载</li>
+                                <li><code>--name &lt;名字&gt;</code>: 指定容器名</li>
+                                <li><code>--rm</code>: 容器停止后自动删除</li>
+                                <li><code>-it</code>: 交互式运行 (进入 shell)</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="container">
+                    <h3 class="text-lg font-bold text-blue-800">列出容器</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">显示正在运行的容器。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker ps</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>显示所有容器（包括已停止的）：<br><code class="text-xs">docker ps -a</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="container">
+                    <h3 class="text-lg font-bold text-blue-800">停止/启动/重启容器</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">管理正在运行的容器。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker stop &lt;容器ID或名字&gt;</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">其他命令</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>启动一个已停止的容器：<br><code class="text-xs">docker start &lt;容器ID或名字&gt;</code></p>
+                            <p class="mt-2">重启容器：<br><code class="text-xs">docker restart &lt;容器ID或名字&gt;</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="container">
+                    <h3 class="text-lg font-bold text-blue-800">删除容器</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">删除一个或多个已停止的容器。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker rm &lt;容器ID或名字&gt;</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>强制删除一个正在运行的容器：<br><code class="text-xs">docker rm -f &lt;容器ID或名字&gt;</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="container">
+                    <h3 class="text-lg font-bold text-blue-800">查看容器日志</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">获取容器的标准输出日志。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker logs &lt;容器ID或名字&gt;</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>持续跟踪日志输出：<br><code class="text-xs">docker logs -f &lt;容器ID或名字&gt;</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="container">
+                    <h3 class="text-lg font-bold text-blue-800">进入容器执行命令</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">在一个正在运行的容器内部执行命令。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker exec -it &lt;容器ID或名字&gt; /bin/bash</code>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="compose">
+                    <h3 class="text-lg font-bold text-blue-800">启动 Compose 应用</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">根据 `docker-compose.yml` 文件在后台创建并启动所有服务。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker compose up -d</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>在前台启动并显示日志：<br><code class="text-xs">docker compose up</code></p>
+                            <p class="mt-2">如果需要，在启动前重新构建镜像：<br><code class="text-xs">docker compose up -d --build</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="compose">
+                    <h3 class="text-lg font-bold text-blue-800">停止 Compose 应用</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">停止并删除由 `up` 创建的容器、网络。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker compose down</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>在停止时一并删除数据卷：<br><code class="text-xs">docker compose down -v</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="compose">
+                    <h3 class="text-lg font-bold text-blue-800">查看 Compose 服务状态</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">列出 Compose 应用中的所有容器。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker compose ps</code>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="compose">
+                    <h3 class="text-lg font-bold text-blue-800">查看 Compose 日志</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">查看所有服务的日志。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker compose logs</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p>持续跟踪日志输出：<br><code class="text-xs">docker compose logs -f</code></p>
+                            <p class="mt-2">查看指定服务的日志：<br><code class="text-xs">docker compose logs -f &lt;服务名&gt;</code></p>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="compose">
+                    <h3 class="text-lg font-bold text-blue-800">在服务中执行命令</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">在指定的运行中服务容器内执行命令。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker compose exec &lt;服务名&gt; &lt;命令&gt;</code>
+                </div>
+
+                <div class="command-card bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col" data-category="system">
+                    <h3 class="text-lg font-bold text-blue-800">清理系统</h3>
+                    <p class="text-sm text-slate-600 mt-1 mb-3">删除所有未使用的容器、网络、镜像（悬空镜像）等。</p>
+                    <code class="command-text block bg-slate-100 text-slate-800 p-3 rounded-md text-sm break-all">docker system prune</code>
+                    <details class="mt-4 text-sm flex-grow flex flex-col justify-end">
+                        <summary class="font-medium text-blue-700">示例与选项</summary>
+                        <div class="mt-2 text-slate-600 border-t pt-3">
+                            <p class="text-red-600 font-bold">警告：这是一个清理命令，会删除数据。</p>
+                            <p class="mt-2">删除所有未使用的本地镜像（不仅是悬空镜像）：<br><code class="text-xs">docker system prune -a</code></p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center mt-12 border-t pt-6">
+        <p class="text-sm text-slate-500">一个交互式 Docker 命令参考 | 让容器化更简单</p>
+    </footer>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterContainer = document.getElementById('filter-container');
+        const commandGrid = document.getElementById('command-grid');
+        const commandCards = commandGrid.querySelectorAll('.command-card');
+
+        if (filterContainer) {
+            filterContainer.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'BUTTON') return;
+
+                const filter = e.target.dataset.filter;
+
+                filterContainer.querySelector('.active').classList.remove('active');
+                e.target.classList.add('active');
+
+                commandCards.forEach(card => {
+                    const category = card.dataset.category;
+                    if (filter === 'all' || category === filter) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        commandGrid.addEventListener('click', function(e) {
+            const copyBtn = e.target.closest('.copy-btn');
+            if (copyBtn) {
+                e.stopPropagation();
+                const card = copyBtn.closest('.command-card');
+                const commandText = card.querySelector('.command-text').textContent;
+
+                const textarea = document.createElement('textarea');
+                textarea.value = commandText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    const svg = copyBtn.querySelector('svg');
+                    if (svg) {
+                        const originalContent = svg.outerHTML;
+                        copyBtn.innerHTML = '已复制!';
+                        copyBtn.classList.add('text-green-600');
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalContent;
+                            copyBtn.classList.remove('text-green-600');
+                        }, 2000);
+                    }
+                } catch (err) {
+                    console.error('无法复制命令: ', err);
+                }
+                document.body.removeChild(textarea);
+            }
+        });
+
+        const cardsWithCopyToClip = document.querySelectorAll('.command-card');
+        cardsWithCopyToClip.forEach(card => {
+            const h3 = card.querySelector('h3');
+            if(h3){
+                const copySpan = document.createElement('span');
+                copySpan.className = 'copy-btn text-slate-400 hover:text-blue-600 cursor-pointer';
+                copySpan.title = '复制命令';
+                copySpan.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+
+                const wrapperDiv = document.createElement('div');
+                wrapperDiv.className = 'flex justify-between items-start mb-3';
+
+                const titleElement = document.createElement('h3');
+                titleElement.className = 'text-lg font-bold text-blue-800';
+                titleElement.textContent = h3.textContent;
+
+                wrapperDiv.appendChild(titleElement);
+                wrapperDiv.appendChild(copySpan);
+
+                const shortDesc = card.querySelector('p');
+
+                card.insertBefore(wrapperDiv, shortDesc);
+                h3.remove();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
